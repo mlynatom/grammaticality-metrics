@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import RidgeCV, LogisticRegressionCV
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import accuracy_score
-from scipy.stats.stats import pearsonr, kendalltau
+from scipy.stats import pearsonr, kendalltau
 
 Dataset = namedtuple('Dataset', 'X y')
 
@@ -94,21 +94,23 @@ class FluencyModel:
         if binary:
             prob_predict = clf.predict_proba(test.X)
             test_y = self.binarize(test.y)
-            print >>sys.stderr, 'accuracy (bin) = ', accuracy_score(predictions, test_y)
-            print >>sys.stderr, 'tau (bin) = ', kendalltau(predictions, test_y)
+            print('accuracy (bin) = ', accuracy_score(predictions, test_y), file=sys.stderr)
+            print(test_y)
+            print(predictions)
+            print('tau (bin) = ', kendalltau(predictions, test_y), file=sys.stderr)
             # correlation for ordinal task
-            print >>sys.stderr, 'r (ord) = ', pearsonr(prob_predict[:, 0], test.y)
-            print >>sys.stderr, 'tau (ord) = ', kendalltau(prob_predict[:, 0], test.y)
+            print('r (ord) = ', pearsonr(prob_predict[:, 0], test.y), file=sys.stderr)
+            print('tau (ord) = ', kendalltau(prob_predict[:, 0], test.y), file=sys.stderr)
         else:
-            print >>sys.stderr, 'r (ord) = ', pearsonr(predictions, test_y)
-            print >>sys.stderr, 'tau (ord) = ', kendalltau(predictions, test_y)
+            print('r (ord) = ', pearsonr(predictions, test_y), file=sys.stderr)
+            print('tau (ord) = ', kendalltau(predictions, test_y), file=sys.stderr)
             # score for binary task
-            print >>sys.stderr, 'accuracy (bin) = ', \
-                accuracy_score(self.binarize(predictions), self.binarize(test_y))
-            print >>sys.stderr, 'tau (bin) = ', \
-                kendalltau(self.binarize(predictions), self.binarize(test_y))
-        for a, b in zip(test_y, predictions):
-            print a, b
+            print('accuracy (bin) = ', \
+                accuracy_score(self.binarize(predictions), self.binarize(test_y)), file=sys.stderr)
+            print('tau (bin) = ', \
+                kendalltau(self.binarize(predictions), self.binarize(test_y)), file=sys.stderr)
+        # for a, b in zip(test_y, predictions):
+        #     print(a,b)
 
     def binarize(self, y):
         """converts labels to their binary form"""
@@ -134,11 +136,11 @@ class FluencyModel:
 
     def save_pickle(self, ordclf, binclf, target_dir):
         """dump model"""
-        with open(os.path.join(target_dir, 'bin_model.pkl'), 'w') as fout:
+        with open(os.path.join(target_dir, 'bin_model.pkl'), 'wb') as fout:
             pickle.dump(binclf, fout)
-        with open(os.path.join(target_dir, 'ord_model.pkl'), 'w') as fout:
+        with open(os.path.join(target_dir, 'ord_model.pkl'), 'wb') as fout:
             pickle.dump(ordclf, fout)
-        with open(os.path.join(target_dir, 'vect_scale.pkl'), 'w') as fout:
+        with open(os.path.join(target_dir, 'vect_scale.pkl'), 'wb') as fout:
             pickle.dump([self.vectorizer, self.scaler], fout)
         with open(os.path.join(target_dir, 'info'), 'w') as fout:
             fout.write('bin_coef = %s\n' % str(binclf.coef_))
@@ -162,16 +164,19 @@ if __name__ == '__main__':
     fm.load_scores(args.s)
     train, test = fm.load_vectors(args.f)
 
-    print >>sys.stderr, '=== Running the ordinal task ==='
+    print("test x", test.X)
+    print("test y", test.y)
+
+    print('=== Running the ordinal task ===', file=sys.stderr)
     ord_clf = RidgeCV(alphas=[10**x for x in range(-5, 5)])
     ord_clf.fit(train.X, train.y)
-    print >>sys.stderr, ord_clf.coef_
+    print(ord_clf.coef_, file=sys.stderr)
     fm.predict(ord_clf, train=train, test=test)
 
-    print >>sys.stderr, '=== Running binarized task ==='
-    bin_clf = LogisticRegressionCV()
+    print('=== Running binarized task ===', file=sys.stderr)
+    bin_clf = LogisticRegressionCV(max_iter=1000)
     bin_clf.fit(train.X, fm.binarize(train.y))
-    print >>sys.stderr, bin_clf.coef_
+    print(bin_clf.coef_, file=sys.stderr)
     fm.predict(bin_clf, binary=True, train=train, test=test)
 
     fm.save_pickle(ord_clf, bin_clf, target_dir=args.d)

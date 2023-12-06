@@ -1,4 +1,4 @@
-# Metrics for evaluating grammatical error corrections
+# Metrics for evaluating grammatical error corrections - Fork for usage with Python 3 and newer libraries
 
 These metrics were used in
 [Courtney Napoles, Keisuke Sakaguchi, and Joel Tetreault. _There's No Comparison: Reference-less Evaluation Metrics in Grammatical Error Correction_. EMNLP 2016](https://www.aclweb.org/anthology/D/D16/D16-1228.pdf)

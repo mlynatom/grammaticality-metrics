@@ -1,0 +1,8 @@
+gigaword5_train.txt
+parsed
+model
+ENNTT
+*.arpa
+*.json
+sentences.txt
+__pycache__

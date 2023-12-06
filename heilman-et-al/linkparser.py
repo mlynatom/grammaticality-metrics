@@ -5,7 +5,8 @@ import sys
 from linkgrammar import *
 
 # change this to the absolute path of the linkgrammar installation
-LINKDIR = os.path.join(os.path.dirname(sys.argv[0]), 'link-grammar-5.2.5')
+LINKDIR = "/usr/local/lib/liblink-grammar.so"
+LINKDIR = "/home/mlynatom/link-grammar-5.12.0/"
 
 
 class LinkParser:
@@ -16,8 +17,9 @@ class LinkParser:
             os.chdir(LINKDIR)
         else:
             os.chdir(path)
-        self.p = Parser()
+        self.po = ParseOptions(min_null_count=0, max_null_count=999)
+        #self.p = Parser()
 
     def has_parse(self, s):
         """returns True if a parse was found for a sentence"""
-        return len(self.p.parse_sent(s)) > 0
+        return len(Sentence(s, Dictionary("en"), self.po).parse()) > 0

@@ -16,6 +16,9 @@ from collections import Counter
 from linkparser import LinkParser
 
 
+from tqdm import tqdm
+
+
 # features used in heilman et al. 2014
 HPSG_FEATURES = set(['trees', 'unify cost succ', 'unify cost fail,' 'unifications succ',
                      'unifications fail', 'subsumptions succ', 'subsumptions fail', 'words',
@@ -54,18 +57,20 @@ class FeatureLoader:
         try:
             features.update(self.feats_spelling(tokens))
         except:
-            print >>sys.stderr, 'Error extracting spelling feats'
-            print >>sys.stderr, traceback.format_exc()
+            print('Error extracting spelling feats', file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
         try:
-            features.update(self.feats_link(' '.join(tokens)))
+            # TODO something wrong on line 14
+            pass
+            # features.update(self.feats_link(' '.join(tokens)))
         except:
-            print >>sys.stderr, 'Error extracting link feats'
-            print >>sys.stderr, traceback.format_exc()
+            print('Error extracting link feats', file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
         try:
             features.update(self.feats_ngram_lm(tokens))
         except:
-            print >>sys.stderr, 'Error extracting ngram/lm feats'
-            print >>sys.stderr, traceback.format_exc()
+            print('Error extracting ngram/lm feats', file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
         return features
 
     def process_file(self, fpath):
@@ -74,7 +79,7 @@ class FeatureLoader:
         with open(fpath) as f:
             for i, l in enumerate(f):
                 if i % 100 == 0:
-                    print i
+                    print(i)
                 all_features.append(self.process_line(l))
 
     def feats_spelling(self, tokens):
@@ -114,13 +119,17 @@ class FeatureLoader:
         for n in range(1, 4):
             if n > len(tokens):
                 continue
-            ngrams = Counter([tuple(tokens[i:i+n]) for i in xrange(len(tokens) + 1 - n)])
+            ngrams = Counter([tuple(tokens[i:i+n])
+                             for i in range(len(tokens) + 1 - n)])
             probabilities = [self.get_ngram_prob(ng) for ng in ngrams]
             features['min_s_%d' % n] = min(probabilities)
             features['max_s_%d' % n] = max(probabilities)
-            features['sum_s_%d' % n] = sum(probabilities) / sum(ngrams.values())
-        features['giga_oov'], features['giga_p'] = self.get_sent_prob(tokens, self.gigalm)
-        features['toefl11_oov'], features['toefl11_p'] = self.get_sent_prob(tokens, self.toefllm)
+            features['sum_s_%d' % n] = sum(
+                probabilities) / sum(ngrams.values())
+        features['giga_oov'], features['giga_p'] = self.get_sent_prob(
+            tokens, self.gigalm)
+        features['toefl11_oov'], features['toefl11_p'] = self.get_sent_prob(
+            tokens, self.toefllm)
         return features
 
     def feats_link(self, l):
@@ -160,7 +169,8 @@ class FeatureLoader:
                     if next_parse[0].endswith('NA'):
                         continue
                     features['parse_score'] = float(next_parse[0].split()[-1])
-                    features['sentential_top_node'] = next_parse[1].split()[1][1] == 'S'
+                    features['sentential_top_node'] = next_parse[1].split()[
+                        1][1] == 'S'
                     features['dep_count'] = sum(
                         [1 if l.startswith('dep') else 0 for l in next_parse[2:]])
                     ret.append(features)
@@ -177,11 +187,11 @@ class FeatureLoader:
             if key == 'id':
                 # marks a new sentence
                 if features:
-                    yield(features)
+                    yield (features)
                 features = {}
             elif key in HPSG_FEATURES:
                 features[key] = log(value + 1)
-        yield(features)
+        yield (features)
 
 
 def check_path(cwd, f):
@@ -189,6 +199,7 @@ def check_path(cwd, f):
     if f[0] != '/':
         return os.path.join(cwd, f)
     return f
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -224,10 +235,10 @@ if __name__ == '__main__':
 
     for f in args.files:
         base = os.path.basename(f)
-        print >>sys.stderr, 'Loading features from', f
+        print('Loading features from', f, file=sys.stderr)
         outpath = os.path.join(check_path(cwd, args.dest), base+'.json')
         with open(outpath, 'w') as outfile, \
-             open(check_path(cwd, f)) as infile:
+                open(check_path(cwd, f)) as infile:
             # use iterators that return None if the parsed or cheap features are not defined
             # will skip any feature extraction if the parse features are not present
             if args.parse:
@@ -244,7 +255,7 @@ if __name__ == '__main__':
             for i, (parse_features, cheap_features, line) in enumerate(
                     zip(all_parse_features, all_cheap_features, infile)):
                 if i % 100 == 0:
-                    print i
+                    print(i)
                 features = {'id': base + '.%d' % i}
                 if parse_features:
                     features.update(parse_features)
@@ -254,9 +265,10 @@ if __name__ == '__main__':
                     # normalize appropriate features by length
                     for s in ['parse_score', 'giga_p', 'toefl11_p']:
                         try:
-                            features[s] = features[s] / max(1, features['length'])
+                            features[s] = features[s] / \
+                                max(1, features['length'])
                         except:
                             pass
                     del features['parse']
                 outfile.write(json.dumps(features) + '\n')
-        print >>sys.stderr, 'Done. features saved to ' + outpath
+        print('Done. features saved to ' + outpath, file=sys.stderr)
