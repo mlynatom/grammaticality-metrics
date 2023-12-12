@@ -17,9 +17,13 @@ class LinkParser:
             os.chdir(LINKDIR)
         else:
             os.chdir(path)
-        self.po = ParseOptions(min_null_count=0, max_null_count=999)
-        #self.p = Parser()
+        self.po = ParseOptions(min_null_count=0, max_null_count=999, max_parse_time=20)
+        # self.p = Parser()
 
     def has_parse(self, s):
         """returns True if a parse was found for a sentence"""
-        return len(Sentence(s, Dictionary("en"), self.po).parse()) > 0
+        try:
+            length = len(Sentence(s, Dictionary("en"), self.po).parse())
+        except:
+            length = 0
+        return length > 0

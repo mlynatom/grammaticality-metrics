@@ -61,8 +61,7 @@ class FeatureLoader:
             print(traceback.format_exc(), file=sys.stderr)
         try:
             # TODO something wrong on line 14
-            pass
-            # features.update(self.feats_link(' '.join(tokens)))
+            features.update(self.feats_link(' '.join(tokens)))
         except:
             print('Error extracting link feats', file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
